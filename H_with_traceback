@@ -1,1 +1,76 @@
 #upload
+#Rachel Cavalier
+#DP PART 3
+#11/11/2024
+#submission 1, 
+import sys
+
+def get_input(input_lines):
+    #n anf g
+    first_line = input_lines[0].strip().split()
+    n = int(first_line[0])
+    g = int(first_line[1])
+    #second line is p_i
+    p = list(map(int, input_lines[1].strip().split()))
+    #third line is h_i
+    h = list(map(int, input_lines[2].strip().split()))
+    
+    return n, g, p, h
+
+def H_bottom_up_traceback(n, g, p, h):
+    #put infinity in (will be overridden)
+    dp = [[float('inf')] * (g + 1) for _ in range(n + 1)]
+    #parent table -1 similar to inf store
+    parent = [[-1] * (g + 1) for _ in range(n + 1)]
+    
+    #0 points needs 0 hours
+    for i in range(n + 1):
+        dp[i][0] = 0
+    
+    #fill dp table and parent
+    for i in range(1, n + 1):
+        for j in range(g + 1):
+            #skip task
+            dp[i][j] = dp[i-1][j]
+            parent[i][j] = -1  #didnt pick i-1 
+            
+            #complete the task
+            if j > 0:
+                needed = max(0, j - p[i-1])
+                if dp[i][j] > dp[i-1][needed] + h[i-1]:
+                    dp[i][j] = dp[i-1][needed] + h[i-1]
+                    parent[i][j] = i - 1  #did pick (overrides)
+
+    #dp[i][j] is min hours to get at least j (g) points
+    min_hours = dp[n][g] if dp[n][g] != float('inf') else -1
+    
+    #traceback for rasks that were selected 
+    selected = []
+    if min_hours != -1:
+        j = g
+        for i in range(n, 0, -1): #iterate backwards f n to 1
+            if parent[i][j] != -1: #not -1 if task was selected
+                selected.append(parent[i][j] + 1) 
+                j -= p[parent[i][j]] #j decreased by points of a selected task
+                if j < 0:
+                    break
+    
+    #output
+    selected.sort()
+    return min_hours, len(selected), selected
+
+if __name__ == "__main__":
+    #read in
+    input_file = sys.argv[1]
+    with open(input_file, 'r') as f:
+        input_lines = f.readlines()
+    
+    
+    n, g, p, h = get_input(input_lines)
+    min_hours, task_count, selected_tasks = H_bottom_up_traceback(n, g, p, h)
+    
+    #make sure that 3 lines
+    print(min_hours) # Line 1: single integer giving the minimum number of hours needed to achieve or exceed grade g. 
+    if min_hours != -1:
+        print(task_count) # Line 2: a single integer giving t the number of tasks selected by your traceback step.
+        print(" ".join(map(str, selected_tasks))) #Line 3: t space-separated integers denoting the task ids (between 1 and n) of selected tasks listed in increasing order.
